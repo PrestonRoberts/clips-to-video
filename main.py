@@ -6,10 +6,8 @@ class Clip:
         self.title = title
 
     def display_clip_information(self):
-        print("==========")
         print("File Locaiton: " + self.file_location)
         print("Clip Title: " + self.title)
-        print("==========")
 
 # Remove starting and ending quotes from a file
 def remove_quotes(file_path):
@@ -58,14 +56,14 @@ def get_clips():
 
 # Change the titles of clips
 def change_titles(clips):
-    choice = input("Do you want to update the titles of the clips? (yes/anything else):")
+    choice = input("Do you want to update the titles of the clips? (yes/anything else): ")
     if choice != 'yes':
         print('The clip titles will not be changed')
         return 0
     
     for clip in clips:
         print('==========')
-        print('Current Title: ' + clip.title)
+        clip.display_clip_information()
         new_title = input("Enter the new title: ")
 
         # Double check
@@ -80,10 +78,23 @@ def change_titles(clips):
         clip.title = new_title
         print("'" + new_title + "' is the new title")
 
+def get_duration():
+    while True:
+        try:
+            number = int(input("How many seconds should the titles be displayed on the clip? (-1 for the whole clip): "))
+            if number >= 0 or number == -1:
+                return number
+            else:
+                print("Invalid duration.")
+        except ValueError:
+            print("Invalid input. Please enter a valid number.")
+
 # Testing functions
 def display_clips_test(clips):
     for clip in clips:
+        print("==========")
         clip.display_clip_information()
+        print("==========")
 
     return 0
 
@@ -94,11 +105,16 @@ def main():
 
     # Handle titles
     include_titles = False
+    title_duration = 0
+
     choice = input("Do you want to include titles of clips in the video (yes/anything else): ")
     if choice == 'yes':
         include_titles = True
         change_titles(clips)
     display_clips_test(clips) # debugging
+
+    if include_titles:
+        title_duration = get_duration()
 
 
 if __name__ == '__main__':
