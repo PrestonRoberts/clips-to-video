@@ -1,6 +1,8 @@
 import os
+import re
 from moviepy.editor import *
 
+# Class for storing clip information
 class Clip:
     def __init__(self, file_location, file_name, title):
         self.file_location = file_location
@@ -39,7 +41,7 @@ def yes_no_question(question):
     choice = ''
     while True:
         choice = input(question + (" (y/n): "))
-        if choice != 'yes' and choice != 'no':
+        if choice != 'y' and choice != 'n':
             print('Response not valid')
         else:
             break
@@ -98,6 +100,33 @@ def change_titles(clips):
         clip.title = new_title
         print("'" + new_title + "' is the new title")
 
+# Get the input from the user as to where the titles will be placed
+def get_location():
+    title_location = ()
+    while(True):
+        choice = input("Where do you want the title of the clips to be (top left/top right/bottom left/bottom right): ")
+        if choice == 'top left':
+            title_location = ('left', 'top')
+            break
+
+        elif choice == 'top right':
+            title_location = ('right', 'top')
+            break
+
+        elif choice == 'bottom left':
+            title_location = ('left', 'bottom')
+            break
+
+        elif choice == 'bottom right':
+            title_location = ('right', 'bottom')
+            break
+
+        else:
+            print('That is not a valid location.')
+
+    return title_location
+
+# Get the input from the user as to how long titles should be displayed
 def get_duration():
     while True:
         try:
@@ -109,6 +138,60 @@ def get_duration():
         except ValueError:
             print("Invalid input. Please enter a valid number.")
 
+# Get the input from the user for the font size of the title
+def get_title_size():
+    while True:
+        try:
+            number = int(input("What should the title fontsize be?: "))
+            if number > 0:
+                return number
+            else:
+                print("Invalid size.")
+        except ValueError:
+            print("Invalid input. Please enter a valid number.")
+
+# Check if color is valid
+def is_valid_hex_color(color_string):
+    hex_color_regex = re.compile(r'^#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})([A-Fa-f0-9]{2})?$')
+    return bool(hex_color_regex.match(color_string))
+
+# Get the input from the user for the font color of the title
+def get_title_color():
+    while True:
+        color = input("What color should the title be? (hex color): ")
+
+        if is_valid_hex_color(color):
+            return color
+        
+        else:
+            print('Not a valid hex color')
+
+# Get the input from the user for the title outline color
+def get_stroke_color():
+    color = '#fff'
+    size = 0
+
+    while True:
+        color = input("What color should the outline be? (hex color): ")
+
+        if is_valid_hex_color(color):
+            break
+        
+        else:
+            print('Not a valid hex color')
+
+    while True:
+        try:
+            size = float(input("What size should the stroke be?: "))
+            if size > 0:
+                break
+            else:
+                print("Invalid size.")
+        except ValueError:
+            print("Invalid input.")
+
+    return color, size
+
 # Testing functions
 def display_clips_test(clips):
     for clip in clips:
@@ -118,6 +201,7 @@ def display_clips_test(clips):
 
     return 0
 
+# Main function
 def main():
     # Get user input clips
     clips = get_clips()
@@ -125,8 +209,13 @@ def main():
 
     # Handle titles
     include_titles = False
-    title_duration = 0
     title_location = ()
+    title_duration = 0
+    title_size = 0
+    title_color = '#fff'
+
+    stroke_color = "#fff"
+    stroke_width = 0
 
     choice = yes_no_question("Do you want to include titles of clips in the video?");
     if choice == 'yes':
@@ -138,29 +227,24 @@ def main():
     display_clips_test(clips) # debugging
 
     if include_titles:
-        # title location
-        while(True):
-            choice = input("Where do you want the title of the clips to be (top left/top right/bottom left/bottom right): ")
-            if choice == 'top left':
-                title_location = ('left', 'top')
-                break
+        # location of titles
+        title_location = get_location()
 
-            elif choice == 'top right':
-                title_location = ('right', 'top')
-                break
-
-            elif choice == 'bottom left':
-                title_location = ('left', 'bottom')
-                break
-
-            elif choice == 'bottom right':
-                title_location = ('right', 'bottom')
-                break
-
-            else:
-                print('That is not a valid location.')
-
+        # duration of titles
         title_duration = get_duration()
+
+        # title size
+        title_size = get_title_size()
+
+        # title color
+        title_color = get_title_color()
+
+        # stroke color
+        choice = yes_no_question("Do you want the text to have an outline?");
+        if choice == 'yes':
+            stroke_color, stroke_width = get_stroke_color()
+
+    display_clips_test(clips) # debugging
 
     # Load all videos
     all_movies = []
@@ -169,18 +253,16 @@ def main():
 
         # Title
         if include_titles:
-            txt_clip = TextClip(clip.title, fontsize=80, color='white') # TODO ask for color and size
+            txt_clip = TextClip(txt=clip.title, fontsize=title_size, color=title_color, stroke_color=stroke_color, stroke_width=stroke_width)
             txt_clip = txt_clip.set_position(title_location).set_duration(min(movie.duration, title_duration))
             movie = CompositeVideoClip([movie, txt_clip])
         
-
         all_movies.append(movie)
 
     
     # Export
     final_video = concatenate_videoclips(all_movies)
     final_video.write_videofile("final_video.mp4")
-
 
 if __name__ == '__main__':
     main()
